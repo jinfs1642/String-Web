@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { memoryDb } from '@/lib/memory-db';
+import { postgresDb } from '@/lib/postgres-db';
 
 // POST /api/projects/[projectId]/apps - 새 앱 생성
 export async function POST(
@@ -34,19 +34,19 @@ export async function POST(
     }
 
     // 임시로 기본 사용자 사용
-    await memoryDb.initializeSampleData();
-    const user = memoryDb.getUserByEmail('admin@example.com');
+    await postgresDb.initializeSampleData();
+    const user = await postgresDb.getUserByEmail('admin@example.com');
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // 권한 확인 (멤버 이상)
-    if (!memoryDb.hasProjectAccess(projectId, user.id, 'member')) {
+    if (!(await postgresDb.hasProjectAccess(projectId, user.id, 'member'))) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     // 프로젝트 존재 확인
-    const project = memoryDb.getProject(projectId);
+    const project = await postgresDb.getProject(projectId);
     if (!project) {
       return NextResponse.json(
         { success: false, error: 'Project not found' },
@@ -54,7 +54,7 @@ export async function POST(
       );
     }
 
-    const app = memoryDb.createApp({
+    const app = await postgresDb.createApp({
       projectId,
       name: name.trim(),
       currentVersion: 1,

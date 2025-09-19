@@ -12,6 +12,7 @@
     "@auth/prisma-adapter": "^2.10.0",
     "@prisma/client": "^6.16.2",
     "@types/papaparse": "^5.3.16",
+    "@vercel/kv": "^3.0.0",
     "@vercel/postgres": "^0.10.0",
     "bcryptjs": "^3.0.2",
     "jsonwebtoken": "^9.0.2",

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { memoryDb } from '@/lib/memory-db';
+import { postgresDb } from '@/lib/postgres-db';
 
 // PUT /api/projects/[projectId]/apps/[appId]/strings/[stringId] - 스트링 업데이트
 export async function PUT(
@@ -29,19 +29,19 @@ export async function PUT(
     const body = await request.json();
 
     // 임시로 기본 사용자 사용
-    await memoryDb.initializeSampleData();
-    const user = memoryDb.getUserByEmail('admin@example.com');
+    await postgresDb.initializeSampleData();
+    const user = await postgresDb.getUserByEmail('admin@example.com');
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // 권한 확인 (멤버 이상)
-    if (!memoryDb.hasAppAccess(appId, user.id, 'member')) {
+    if (!(await postgresDb.hasAppAccess(appId, user.id, 'member'))) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    // 스트링이 해당 앱에 속하는지 확인 (임시로 모든 스트링을 가져와서 확인)
-    const allStrings = memoryDb.getStringsByApp(appId, 1, 10000).data;
+    // 스트링이 해당 앱에 속하는지 확인
+    const allStrings = (await postgresDb.getStringsByApp(appId, 1, 10000)).data;
     const existingString = allStrings.find(s => s.id === stringId);
     if (!existingString) {
       return NextResponse.json(
@@ -50,7 +50,7 @@ export async function PUT(
       );
     }
 
-    const updatedString = memoryDb.updateString(stringId, {
+    const updatedString = await postgresDb.updateString(stringId, {
       ...body,
       modifiedAt: new Date(),
       modifiedBy: user.id,
@@ -102,19 +102,19 @@ export async function DELETE(
     }
 
     // 임시로 기본 사용자 사용
-    await memoryDb.initializeSampleData();
-    const user = memoryDb.getUserByEmail('admin@example.com');
+    await postgresDb.initializeSampleData();
+    const user = await postgresDb.getUserByEmail('admin@example.com');
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // 권한 확인 (멤버 이상)
-    if (!memoryDb.hasAppAccess(appId, user.id, 'member')) {
+    if (!(await postgresDb.hasAppAccess(appId, user.id, 'member'))) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    // 스트링이 해당 앱에 속하는지 확인 (임시로 모든 스트링을 가져와서 확인)
-    const allStrings = memoryDb.getStringsByApp(appId, 1, 10000).data;
+    // 스트링이 해당 앱에 속하는지 확인
+    const allStrings = (await postgresDb.getStringsByApp(appId, 1, 10000)).data;
     const existingString = allStrings.find(s => s.id === stringId);
     if (!existingString) {
       return NextResponse.json(
@@ -123,7 +123,7 @@ export async function DELETE(
       );
     }
 
-    const deleted = memoryDb.deleteString(stringId);
+    const deleted = await postgresDb.deleteString(stringId);
     if (!deleted) {
       return NextResponse.json(
         { success: false, error: 'Failed to delete string' },

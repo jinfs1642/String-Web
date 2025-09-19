@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { memoryDb } from '@/lib/memory-db';
+import { postgresDb } from '@/lib/postgres-db';
 
 // GET /api/projects/[projectId]/apps/[appId]/strings - 스트링 목록 조회
 export async function GET(
@@ -31,18 +31,18 @@ export async function GET(
     const limit = parseInt(searchParams.get('limit') || '50');
 
     // 임시로 기본 사용자 사용
-    await memoryDb.initializeSampleData();
-    const user = memoryDb.getUserByEmail('admin@example.com');
+    await postgresDb.initializeSampleData();
+    const user = await postgresDb.getUserByEmail('admin@example.com');
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // 권한 확인
-    if (!memoryDb.hasAppAccess(appId, user.id)) {
+    if (!(await postgresDb.hasAppAccess(appId, user.id))) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    const stringsData = memoryDb.getStringsByApp(appId, page, limit);
+    const stringsData = await postgresDb.getStringsByApp(appId, page, limit);
 
     const paginatedResponse = {
       data: stringsData.data,
@@ -99,18 +99,18 @@ export async function POST(
     }
 
     // 임시로 기본 사용자 사용
-    await memoryDb.initializeSampleData();
-    const user = memoryDb.getUserByEmail('admin@example.com');
+    await postgresDb.initializeSampleData();
+    const user = await postgresDb.getUserByEmail('admin@example.com');
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // 권한 확인 (멤버 이상)
-    if (!memoryDb.hasAppAccess(appId, user.id, 'member')) {
+    if (!(await postgresDb.hasAppAccess(appId, user.id, 'member'))) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    const newString = memoryDb.createString({
+    const newString = await postgresDb.createString({
       appId,
       key: key.trim(),
       value: value.trim(),

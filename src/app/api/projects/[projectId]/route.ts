@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { memoryDb } from '@/lib/memory-db';
+import { postgresDb } from '@/lib/postgres-db';
 
 // GET /api/projects/[projectId] - 특정 프로젝트 조회
 export async function GET(
@@ -14,30 +14,30 @@ export async function GET(
     }
 
     // 임시로 기본 사용자 사용
-    await memoryDb.initializeSampleData();
-    const user = memoryDb.getUserByEmail('admin@example.com');
+    await postgresDb.initializeSampleData();
+    const user = await postgresDb.getUserByEmail('admin@example.com');
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // 권한 확인
-    if (!memoryDb.hasProjectAccess(projectId, user.id, 'viewer')) {
+    if (!(await postgresDb.hasProjectAccess(projectId, user.id, 'viewer'))) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    const project = memoryDb.getProject(projectId);
+    const project = await postgresDb.getProject(projectId);
     if (!project) {
       return NextResponse.json({ success: false, error: 'Project not found' }, { status: 404 });
     }
 
     // 프로젝트에 앱 정보 포함
-    const apps = memoryDb.getAppsByProject(projectId);
+    const apps = await postgresDb.getAppsByProject(projectId);
     const projectWithApps = {
       ...project,
-      apps: apps.map(app => ({
+      apps: await Promise.all(apps.map(async app => ({
         ...app,
-        strings: memoryDb.getStringsByApp(app.id, 1, 1000).data
-      }))
+        strings: (await postgresDb.getStringsByApp(app.id, 1, 1000)).data
+      })))
     };
 
     return NextResponse.json({
@@ -76,18 +76,18 @@ export async function PUT(
     }
 
     // 임시로 기본 사용자 사용
-    await memoryDb.initializeSampleData();
-    const user = memoryDb.getUserByEmail('admin@example.com');
+    await postgresDb.initializeSampleData();
+    const user = await postgresDb.getUserByEmail('admin@example.com');
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // 권한 확인 (최소 'admin' 역할 필요)
-    if (!memoryDb.hasProjectAccess(projectId, user.id, 'admin')) {
+    if (!(await postgresDb.hasProjectAccess(projectId, user.id, 'admin'))) {
       return NextResponse.json({ success: false, error: 'Permission denied' }, { status: 403 });
     }
 
-    const updatedProject = memoryDb.updateProject(projectId, { 
+    const updatedProject = await postgresDb.updateProject(projectId, { 
       name: name.trim(),
       description: description?.trim()
     });

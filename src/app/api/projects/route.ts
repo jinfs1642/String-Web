@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { memoryDb } from '@/lib/memory-db';
+import { postgresDb } from '@/lib/postgres-db';
 
 // GET /api/projects - 사용자의 프로젝트 목록 조회
 export async function GET(request: NextRequest) {
@@ -12,19 +12,19 @@ export async function GET(request: NextRequest) {
     // }
 
     // 임시로 기본 사용자 사용 (나중에 실제 인증으로 변경)
-    await memoryDb.initializeSampleData();
-    const user = memoryDb.getUserByEmail('admin@example.com');
+    await postgresDb.initializeSampleData();
+    const user = await postgresDb.getUserByEmail('admin@example.com');
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const projects = memoryDb.getProjectsByUser(user.id);
+    const projects = await postgresDb.getProjectsByUser(user.id);
 
     // 각 프로젝트에 앱 정보 포함
-    const projectsWithApps = projects.map(project => ({
+    const projectsWithApps = await Promise.all(projects.map(async project => ({
       ...project,
-      apps: memoryDb.getAppsByProject(project.id)
-    }));
+      apps: await postgresDb.getAppsByProject(project.id)
+    })));
 
     return NextResponse.json({
       success: true,
@@ -59,13 +59,13 @@ export async function POST(request: NextRequest) {
     }
 
     // 임시로 기본 사용자 사용
-    await memoryDb.initializeSampleData();
-    const user = memoryDb.getUserByEmail('admin@example.com');
+    await postgresDb.initializeSampleData();
+    const user = await postgresDb.getUserByEmail('admin@example.com');
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const project = memoryDb.createProject({
+    const project = await postgresDb.createProject({
       name: name.trim(),
       description: description?.trim(),
       createdBy: user.id,

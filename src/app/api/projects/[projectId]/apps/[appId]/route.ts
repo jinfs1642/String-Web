@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { memoryDb } from '@/lib/memory-db';
+import { postgresDb } from '@/lib/postgres-db';
 
 // GET /api/projects/[projectId]/apps/[appId] - 특정 앱 조회
 export async function GET(
@@ -26,18 +26,18 @@ export async function GET(
     }
 
     // 임시로 기본 사용자 사용
-    await memoryDb.initializeSampleData();
-    const user = memoryDb.getUserByEmail('admin@example.com');
+    await postgresDb.initializeSampleData();
+    const user = await postgresDb.getUserByEmail('admin@example.com');
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // 권한 확인
-    if (!memoryDb.hasAppAccess(appId, user.id)) {
+    if (!(await postgresDb.hasAppAccess(appId, user.id))) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    const app = memoryDb.getApp(appId);
+    const app = await postgresDb.getApp(appId);
     if (!app || app.projectId !== projectId) {
       return NextResponse.json(
         { success: false, error: 'App not found' },
@@ -46,8 +46,8 @@ export async function GET(
     }
 
     // 앱에 스트링 정보 포함
-    const stringsData = memoryDb.getStringsByApp(appId, 1, 10000);
-    const versions = memoryDb.getVersionsByApp(appId);
+    const stringsData = await postgresDb.getStringsByApp(appId, 1, 10000);
+    const versions = await postgresDb.getVersionsByApp(appId);
 
     const appWithData = {
       ...app,

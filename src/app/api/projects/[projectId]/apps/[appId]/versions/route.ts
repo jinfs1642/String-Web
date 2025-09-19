@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { memoryDb } from '@/lib/memory-db';
+import { postgresDb } from '@/lib/postgres-db';
 
 // POST /api/projects/[projectId]/apps/[appId]/versions - 새 버전 발행
 export async function POST(
@@ -29,19 +29,19 @@ export async function POST(
     const { versionNumber, publisherName, notes } = body;
 
     // 임시로 기본 사용자 사용
-    await memoryDb.initializeSampleData();
-    const user = memoryDb.getUserByEmail('admin@example.com');
+    await postgresDb.initializeSampleData();
+    const user = await postgresDb.getUserByEmail('admin@example.com');
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // 권한 확인 (멤버 이상)
-    if (!memoryDb.hasAppAccess(appId, user.id, 'member')) {
+    if (!(await postgresDb.hasAppAccess(appId, user.id, 'member'))) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
     // 앱 존재 확인
-    const app = memoryDb.getApp(appId);
+    const app = await postgresDb.getApp(appId);
     if (!app || app.projectId !== projectId) {
       return NextResponse.json(
         { success: false, error: 'App not found' },
@@ -49,11 +49,8 @@ export async function POST(
       );
     }
 
-    // 현재 스트링들을 가져와서 스냅샷 생성
-    const currentStrings = memoryDb.getStringsByApp(appId, 1, 10000).data;
-
     // 버전 발행
-    const version = memoryDb.publishVersion(appId, {
+    const version = await postgresDb.publishVersion(appId, {
       versionNumber: versionNumber || (app.currentVersion + 1),
       publisherId: user.id,
       publisherName: publisherName || user.name,
@@ -105,18 +102,18 @@ export async function GET(
     }
 
     // 임시로 기본 사용자 사용
-    await memoryDb.initializeSampleData();
-    const user = memoryDb.getUserByEmail('admin@example.com');
+    await postgresDb.initializeSampleData();
+    const user = await postgresDb.getUserByEmail('admin@example.com');
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // 권한 확인
-    if (!memoryDb.hasAppAccess(appId, user.id)) {
+    if (!(await postgresDb.hasAppAccess(appId, user.id))) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    const versions = memoryDb.getVersionsByApp(appId);
+    const versions = await postgresDb.getVersionsByApp(appId);
 
     return NextResponse.json({
       success: true,
