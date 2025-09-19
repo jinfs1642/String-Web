@@ -1,0 +1,21 @@
+key,value
+welcome_title,환영합니다
+login_button,로그인
+logout_button,로그아웃
+signup_button,회원가입
+email_placeholder,이메일을 입력하세요
+password_placeholder,비밀번호를 입력하세요
+error_required_field,필수 입력 항목입니다
+error_invalid_email,올바른 이메일 형식이 아닙니다
+success_login,로그인에 성공했습니다
+success_logout,로그아웃되었습니다
+menu_home,홈
+menu_profile,프로필
+menu_settings,설정
+button_save,저장
+button_cancel,취소
+button_delete,삭제
+confirm_delete,정말로 삭제하시겠습니까?
+loading_message,로딩 중입니다...
+no_data_message,데이터가 없습니다
+retry_button,다시 시도

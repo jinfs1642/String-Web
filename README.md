@@ -1,36 +1,126 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# String Manager MVP
 
-## Getting Started
+웹 기반 앱 스트링 파일 관리 서비스입니다.
 
-First, run the development server:
+## 기능 소개
 
+### 📁 프로젝트 관리
+- 프로젝트 생성 및 관리
+- 프로젝트당 여러 앱 관리 가능
+
+### 📱 앱 관리
+- 각 프로젝트에 여러 앱 추가 가능
+- 앱별 스트링 데이터 독립 관리
+
+### 📝 스트링 편집
+- Excel과 유사한 인터페이스로 스트링 편집
+- 실시간 수정/추가 감지
+- Key-Value 쌍으로 스트링 관리
+
+### 🔔 변경 알림
+- 신규/수정된 스트링 실시간 알림
+- 변경 시간과 상태 추적
+- 현재 버전 기준 변경사항 표시
+
+### 📦 버전 관리
+- 스트링 버전 발행 기능
+- 발행된 버전 히스토리 보관
+- 각 버전별 변경사항 기록
+
+### 📂 CSV 가져오기
+- CSV 파일을 통한 대량 스트링 업로드
+- 기존 스트링과 자동 병합
+
+## 사용 방법
+
+### 1. 개발 서버 실행
 ```bash
+cd string-manager
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+서버가 http://localhost:3000 에서 실행됩니다.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2. 프로젝트 생성
+1. 메인 페이지에서 "New Project" 버튼 클릭
+2. 프로젝트 이름 입력 후 생성
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 3. 앱 생성
+1. 생성된 프로젝트 클릭
+2. "New App" 버튼 클릭
+3. 앱 이름 입력 후 생성
 
-## Learn More
+### 4. 스트링 관리
+1. 생성된 앱 클릭
+2. "Add String" 버튼으로 새 스트링 추가
+3. 표에서 직접 Key와 Value 수정 가능
+4. 변경사항은 상단 알림판에 자동 표시
 
-To learn more about Next.js, take a look at the following resources:
+### 5. CSV 가져오기
+1. 앱 페이지에서 "Import CSV" 버튼 클릭
+2. CSV 파일 선택 (example_strings.csv 참고)
+3. CSV 형식: key,value 헤더 필요
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 6. 버전 발행
+1. 변경사항이 있을 때 "Publish Version" 버튼 활성화
+2. 클릭하면 현재 상태를 버전으로 저장
+3. 알림판 초기화 및 버전 번호 증가
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 7. 히스토리 확인
+1. "View History" 버튼으로 히스토리 페이지 이동
+2. 과거 버전별 변경사항 및 스트링 목록 확인
 
-## Deploy on Vercel
+## CSV 파일 형식
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+CSV 파일은 다음 형식이어야 합니다:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```csv
+key,value
+welcome_message,Welcome to our app!
+login_button,Sign In
+logout_button,Sign Out
+```
+
+## 데이터 저장
+
+현재 MVP는 브라우저의 localStorage를 사용하여 데이터를 저장합니다.
+- 브라우저를 닫아도 데이터가 유지됩니다
+- 브라우저 캐시를 지우면 데이터가 삭제됩니다
+
+## 향후 개발 계획
+
+1. **서버 배포**: GitHub Pages 또는 클라우드 서버 배포
+2. **데이터베이스 연동**: 실제 데이터베이스 사용
+3. **사용자 인증**: 로그인/로그아웃 기능
+4. **권한 관리**: 프로젝트별 접근 권한
+5. **Excel 지원**: .xlsx 파일 가져오기/내보내기
+6. **다국어 지원**: 언어별 스트링 관리
+7. **API 제공**: 외부 앱에서 스트링 데이터 사용
+
+## 기술 스택
+
+- **Frontend**: Next.js 15, React, TypeScript
+- **Styling**: Tailwind CSS
+- **Data Parsing**: Papa Parse (CSV)
+- **Storage**: localStorage (MVP용)
+
+## 유지보수 가이드
+
+### 새로운 기능 추가
+1. `src/lib/storage.ts`: 데이터 구조 수정 시
+2. `src/app/`: 새로운 페이지 추가 시
+3. 컴포넌트는 각 페이지 파일에 통합되어 있음
+
+### 디자인 수정
+- Tailwind CSS 클래스 수정
+- 색상은 주로 blue-500, gray-50 등 사용
+- 반응형 디자인은 md:, lg: 브레이크포인트 사용
+
+### 데이터 구조 수정
+- `storage.ts`의 인터페이스 수정
+- 해당 인터페이스를 사용하는 모든 컴포넌트 업데이트 필요
+
+### 기능 확장
+- 새로운 페이지: `src/app/` 하위에 폴더 생성
+- 데이터 로직: `LocalStorage` 클래스에 메서드 추가
+- UI 컴포넌트: 각 페이지 파일에 직접 구현

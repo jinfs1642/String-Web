@@ -1,0 +1,11 @@
+No,Status,String ID (Key),Resource Folder,Default Value (English),Korean,Japanese,Spanish,String,Classification,History Note
+1,Active,welcome_title,Main,Welcome to App,앱에 오신 것을 환영합니다,アプリへようこそ,Bienvenido a la aplicación,Welcome,UI,Initial version
+2,Active,login_button,Auth,Sign In,로그인,サインイン,Iniciar sesión,Sign In,Button,Updated design
+3,Active,logout_button,Auth,Sign Out,로그아웃,サインアウト,Cerrar sesión,Sign Out,Button,
+4,Active,email_label,Auth,Email Address,이메일 주소,メールアドレス,Dirección de correo,Email,Label,
+5,Active,password_label,Auth,Password,비밀번호,パスワード,Contraseña,Password,Label,
+6,Active,forgot_password,Auth,Forgot Password?,비밀번호를 잊으셨나요?,パスワードをお忘れですか？,¿Olvidaste tu contraseña?,Forgot Password,Link,
+7,Active,signup_title,Auth,Create Account,계정 만들기,アカウント作成,Crear cuenta,Create Account,Title,
+8,Active,home_tab,Navigation,Home,홈,ホーム,Inicio,Home,Tab,
+9,Active,profile_tab,Navigation,Profile,프로필,プロフィール,Perfil,Profile,Tab,
+10,Active,settings_tab,Navigation,Settings,설정,設定,Configuración,Settings,Tab,

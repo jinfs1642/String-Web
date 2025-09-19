@@ -1,0 +1,9 @@
+key,value
+welcome_message,Welcome to our app!
+login_button,Sign In
+logout_button,Sign Out
+error_invalid_email,Please enter a valid email address
+success_login,Successfully logged in
+navigation_home,Home
+navigation_settings,Settings
+navigation_profile,Profile
