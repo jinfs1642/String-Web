@@ -1,11 +1,4 @@
-export interface StringItem {
-  id: string;
-  key: string;
-  value: string;
-  status?: 'new' | 'modified';
-  modifiedAt?: Date;
-  additionalColumns?: { [key: string]: any };
-}
+import { StringItem } from './database';
 
 export interface NotificationItem {
   id: string;
@@ -197,29 +190,21 @@ export class LocalStorage {
         const isLargeDataset = app.strings.length > 1600;
 
         // 소규모 데이터셋: 전체 스트링 저장, 대규모: 변경된 것만 저장
-        const stringsToSave = isLargeDataset
-          ? app.strings
-              .filter(str => str.status === 'new' || str.status === 'modified')
-              .map(str => ({
-                i: str.id,           // id -> i (짧은 키)
-                k: str.key,          // key -> k
-                v: str.value,        // value -> v
-                s: str.status,       // status -> s
-                m: str.modifiedAt    // modifiedAt -> m
-              }))
-          : app.strings.map(str => ({
-              id: str.id,
-              key: str.key,
-              value: str.value,
-              status: str.status,
-              modifiedAt: str.modifiedAt
-              // additionalColumns는 제외하여 크기 절약
-            }));
+        const stringsToSave: StringItem[] = app.strings.map(str => ({
+          id: str.id,
+          appId: str.appId,
+          key: str.key,
+          value: str.value,
+          status: str.status,
+          modifiedAt: str.modifiedAt,
+          createdAt: str.createdAt,
+          additionalColumns: str.additionalColumns
+        }));
 
         const version: Version = {
           id: Date.now().toString(),
           version: finalVersion,
-          strings: stringsToSave as any,
+          strings: stringsToSave,
           notifications: app.notifications.map(n => ({
             id: n.id,
             status: n.status,

@@ -4,10 +4,11 @@ import { memoryDb } from '@/lib/memory-db';
 // GET /api/projects/[projectId] - 특정 프로젝트 조회
 export async function GET(
   request: NextRequest,
-  { params }: { params: { projectId: string } }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
-    const projectId = parseInt(params.projectId, 10);
+    const { projectId: projectIdStr } = await params;
+    const projectId = parseInt(projectIdStr, 10);
     if (isNaN(projectId)) {
       return NextResponse.json({ success: false, error: 'Invalid project ID' }, { status: 400 });
     }
@@ -55,10 +56,11 @@ export async function GET(
 // PUT /api/projects/[projectId] - 프로젝트 수정
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { projectId: string } }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
-    const projectId = parseInt(params.projectId, 10);
+    const { projectId: projectIdStr } = await params;
+    const projectId = parseInt(projectIdStr, 10);
     if (isNaN(projectId)) {
       return NextResponse.json({ success: false, error: 'Invalid project ID' }, { status: 400 });
     }

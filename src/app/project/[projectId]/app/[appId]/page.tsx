@@ -146,7 +146,7 @@ export default function AppPage() {
 
     const newKey = (maxKey + 1).toString();
 
-    const additionalColumns: { [key: string]: any } = {};
+    const additionalColumns: { [key: string]: string } = {};
     if (app.columns) {
       app.columns.forEach(column => {
         if (column !== app.keyColumn && column !== app.valueColumn) {
@@ -785,7 +785,7 @@ export default function AppPage() {
                     Papa.parse(file, {
                       header: true,
                       skipEmptyLines: true,
-                      complete: async (results: Papa.ParseResult<any>) => {
+                      complete: async (results: Papa.ParseResult<Record<string, string>>) => {
                         console.log('Parse results:', results);
                         setCsvImportStatus('CSV 파일 파싱 중...');
 
@@ -856,7 +856,7 @@ export default function AppPage() {
                         }
 
                         setCsvImportStatus('데이터 검증 중...');
-                        const validData = results.data.filter((row: any) => {
+                        const validData = results.data.filter((row: Record<string, string>) => {
                           const keyValue = row[keyColumn];
                           const valueValue = row[valueColumn];
                           return keyValue && keyValue.toString().trim() && valueValue && valueValue.toString().trim();
@@ -871,8 +871,8 @@ export default function AppPage() {
                           return;
                         }
 
-                        const newStrings = validData.map((row: any) => {
-                          const additionalColumns: { [key: string]: any } = {};
+                        const newStrings = validData.map((row: Record<string, string>) => {
+                          const additionalColumns: { [key: string]: string } = {};
                           columns.forEach(col => {
                             if (col !== keyColumn && col !== valueColumn) {
                               additionalColumns[col] = row[col];
@@ -932,7 +932,7 @@ export default function AppPage() {
                           alert('스트링 가져오기 중 오류가 발생했습니다.');
                         }
                       },
-                      error: (error: any) => {
+                      error: (error: Error) => {
                         console.error('CSV parsing error:', error);
                         setCsvImportLoading(false);
                         setCsvImportStatus('');

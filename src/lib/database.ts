@@ -48,7 +48,7 @@ export interface StringItem {
   appId: number;
   key: string;
   value: string;
-  additionalColumns?: { [key: string]: any };
+  additionalColumns?: { [key: string]: string };
   status?: 'new' | 'modified';
   modifiedAt?: Date;
   modifiedBy?: number;
@@ -63,7 +63,7 @@ export interface Version {
   publisherName?: string;
   notes?: string;
   stringsSnapshot: StringItem[];
-  notifications: any[];
+  notifications: { id: string; status: string; stringNumber: number; stringId: string; modifiedAt: Date }[];
   publishedAt: Date;
 }
 
@@ -72,8 +72,8 @@ export interface PendingChange {
   appId: number;
   stringId: number;
   changeType: 'new' | 'modified' | 'deleted';
-  oldValue?: any;
-  newValue?: any;
+  oldValue?: string;
+  newValue?: string;
   changedBy: number;
   createdAt: Date;
 }

@@ -31,7 +31,7 @@ export default function HistoryPage() {
 
       try {
         // Load project info
-        const projectResponse = await apiClient.getProject(projectId);
+        const projectResponse = await apiClient.getProject(projectId.toString());
         if (projectResponse.success && projectResponse.data) {
           setProject(projectResponse.data);
         } else {
@@ -41,7 +41,7 @@ export default function HistoryPage() {
         }
 
         // Load app info
-        const appResponse = await apiClient.getApp(projectId, appId);
+        const appResponse = await apiClient.getApp(projectId.toString(), appId.toString());
         if (appResponse.success && appResponse.data) {
           setApp(appResponse.data);
         } else {
