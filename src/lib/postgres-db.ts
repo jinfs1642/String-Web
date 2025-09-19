@@ -1,294 +1,326 @@
 // PostgreSQL을 사용한 데이터베이스 (권장)
 // Vercel Postgres 또는 다른 PostgreSQL 서비스 사용
 
-import { sql } from '@vercel/postgres';
+import { PrismaClient, StringStatus } from '@prisma/client';
 import { User, Project, App, StringItem, Version } from './database';
+
+const prisma = new PrismaClient();
+
+// Helper functions for enum conversion
+const stringStatusToPrisma = (status?: 'new' | 'modified'): StringStatus | null => {
+  if (!status) return null;
+  return status === 'new' ? StringStatus.NEW : StringStatus.MODIFIED;
+};
+
+const stringStatusFromPrisma = (status?: StringStatus | null): 'new' | 'modified' | undefined => {
+  if (!status) return undefined;
+  return status === StringStatus.NEW ? 'new' : 'modified';
+};
 
 class PostgresDatabase {
   // User methods
   async createUser(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
-    const result = await sql`
-      INSERT INTO users (email, name, avatar_url, created_at, updated_at)
-      VALUES (${userData.email}, ${userData.name}, ${userData.avatarUrl || null}, NOW(), NOW())
-      RETURNING id, email, name, avatar_url, created_at, updated_at
-    `;
-    
+    const user = await prisma.user.create({
+      data: {
+        email: userData.email,
+        name: userData.name,
+        avatarUrl: userData.avatarUrl || null
+      }
+    });
+
     return {
-      id: result.rows[0].id,
-      email: result.rows[0].email,
-      name: result.rows[0].name,
-      avatarUrl: result.rows[0].avatar_url,
-      createdAt: new Date(result.rows[0].created_at),
-      updatedAt: new Date(result.rows[0].updated_at),
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      avatarUrl: user.avatarUrl || undefined,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     };
   }
 
   async getUserByEmail(email: string): Promise<User | null> {
-    const result = await sql`
-      SELECT id, email, name, avatar_url, created_at, updated_at
-      FROM users WHERE email = ${email}
-    `;
-    
-    if (result.rows.length === 0) return null;
-    
+    const user = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (!user) return null;
+
     return {
-      id: result.rows[0].id,
-      email: result.rows[0].email,
-      name: result.rows[0].name,
-      avatarUrl: result.rows[0].avatar_url,
-      createdAt: new Date(result.rows[0].created_at),
-      updatedAt: new Date(result.rows[0].updated_at),
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      avatarUrl: user.avatarUrl || undefined,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
     };
   }
 
   // Project methods
   async createProject(projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>, userId: number): Promise<Project> {
-    const result = await sql`
-      INSERT INTO projects (name, description, created_by, created_at, updated_at)
-      VALUES (${projectData.name}, ${projectData.description || null}, ${userId}, NOW(), NOW())
-      RETURNING id, name, description, created_by, created_at, updated_at
-    `;
-    
+    const project = await prisma.project.create({
+      data: {
+        name: projectData.name,
+        description: projectData.description || null,
+        createdBy: userId,
+      }
+    });
+
     return {
-      id: result.rows[0].id,
-      name: result.rows[0].name,
-      description: result.rows[0].description,
-      createdBy: result.rows[0].created_by,
-      createdAt: new Date(result.rows[0].created_at),
-      updatedAt: new Date(result.rows[0].updated_at),
+      id: project.id,
+      name: project.name,
+      description: project.description || undefined,
+      createdBy: project.createdBy,
+      createdAt: project.createdAt,
+      updatedAt: project.updatedAt,
     };
   }
 
   async getProjectsByUser(userId: number): Promise<Project[]> {
-    const result = await sql`
-      SELECT id, name, description, created_by, created_at, updated_at
-      FROM projects WHERE created_by = ${userId}
-      ORDER BY created_at DESC
-    `;
-    
-    return result.rows.map(row => ({
-      id: row.id,
-      name: row.name,
-      description: row.description,
-      createdBy: row.created_by,
-      createdAt: new Date(row.created_at),
-      updatedAt: new Date(row.updated_at),
+    const projects = await prisma.project.findMany({
+      where: { createdBy: userId },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return projects.map(project => ({
+      id: project.id,
+      name: project.name,
+      description: project.description || undefined,
+      createdBy: project.createdBy,
+      createdAt: project.createdAt,
+      updatedAt: project.updatedAt,
     }));
   }
 
   async getProject(projectId: number): Promise<Project | null> {
-    const result = await sql`
-      SELECT id, name, description, created_by, created_at, updated_at
-      FROM projects WHERE id = ${projectId}
-    `;
-    
-    if (result.rows.length === 0) return null;
-    
+    const project = await prisma.project.findUnique({
+      where: { id: projectId }
+    });
+
+    if (!project) return null;
+
     return {
-      id: result.rows[0].id,
-      name: result.rows[0].name,
-      description: result.rows[0].description,
-      createdBy: result.rows[0].created_by,
-      createdAt: new Date(result.rows[0].created_at),
-      updatedAt: new Date(result.rows[0].updated_at),
+      id: project.id,
+      name: project.name,
+      description: project.description || undefined,
+      createdBy: project.createdBy,
+      createdAt: project.createdAt,
+      updatedAt: project.updatedAt,
     };
   }
 
   async updateProject(projectId: number, projectData: Partial<Project>): Promise<Project | null> {
-    const result = await sql`
-      UPDATE projects 
-      SET name = COALESCE(${projectData.name}, name),
-          description = COALESCE(${projectData.description}, description),
-          updated_at = NOW()
-      WHERE id = ${projectId}
-      RETURNING id, name, description, created_by, created_at, updated_at
-    `;
-    
-    if (result.rows.length === 0) return null;
-    
-    return {
-      id: result.rows[0].id,
-      name: result.rows[0].name,
-      description: result.rows[0].description,
-      createdBy: result.rows[0].created_by,
-      createdAt: new Date(result.rows[0].created_at),
-      updatedAt: new Date(result.rows[0].updated_at),
-    };
+    try {
+      const project = await prisma.project.update({
+        where: { id: projectId },
+        data: {
+          ...(projectData.name !== undefined && { name: projectData.name }),
+          ...(projectData.description !== undefined && { description: projectData.description }),
+        }
+      });
+
+      return {
+        id: project.id,
+        name: project.name,
+        description: project.description || undefined,
+        createdBy: project.createdBy,
+        createdAt: project.createdAt,
+        updatedAt: project.updatedAt,
+      };
+    } catch (error) {
+      return null;
+    }
   }
 
   // App methods
   async createApp(appData: Omit<App, 'id' | 'createdAt' | 'updatedAt'>): Promise<App> {
-    const result = await sql`
-      INSERT INTO apps (project_id, name, current_version, columns, key_column, value_column, created_at, updated_at)
-      VALUES (${appData.projectId}, ${appData.name}, ${appData.currentVersion}, ${JSON.stringify(appData.columns || [])}, ${appData.keyColumn || null}, ${appData.valueColumn || null}, NOW(), NOW())
-      RETURNING id, project_id, name, current_version, columns, key_column, value_column, created_at, updated_at
-    `;
-    
+    const app = await prisma.app.create({
+      data: {
+        projectId: appData.projectId,
+        name: appData.name,
+        currentVersion: appData.currentVersion,
+        columns: appData.columns || [],
+        keyColumn: appData.keyColumn || null,
+        valueColumn: appData.valueColumn || null,
+      }
+    });
+
     return {
-      id: result.rows[0].id,
-      projectId: result.rows[0].project_id,
-      name: result.rows[0].name,
-      currentVersion: result.rows[0].current_version,
-      columns: result.rows[0].columns,
-      keyColumn: result.rows[0].key_column,
-      valueColumn: result.rows[0].value_column,
-      createdAt: new Date(result.rows[0].created_at),
-      updatedAt: new Date(result.rows[0].updated_at),
+      id: app.id,
+      projectId: app.projectId,
+      name: app.name,
+      currentVersion: app.currentVersion,
+      columns: app.columns,
+      keyColumn: app.keyColumn || undefined,
+      valueColumn: app.valueColumn || undefined,
+      createdAt: app.createdAt,
+      updatedAt: app.updatedAt,
     };
   }
 
   async getApp(appId: number): Promise<App | null> {
-    const result = await sql`
-      SELECT id, project_id, name, current_version, columns, key_column, value_column, created_at, updated_at
-      FROM apps WHERE id = ${appId}
-    `;
-    
-    if (result.rows.length === 0) return null;
-    
+    const app = await prisma.app.findUnique({
+      where: { id: appId }
+    });
+
+    if (!app) return null;
+
     return {
-      id: result.rows[0].id,
-      projectId: result.rows[0].project_id,
-      name: result.rows[0].name,
-      currentVersion: result.rows[0].current_version,
-      columns: result.rows[0].columns,
-      keyColumn: result.rows[0].key_column,
-      valueColumn: result.rows[0].value_column,
-      createdAt: new Date(result.rows[0].created_at),
-      updatedAt: new Date(result.rows[0].updated_at),
+      id: app.id,
+      projectId: app.projectId,
+      name: app.name,
+      currentVersion: app.currentVersion,
+      columns: app.columns,
+      keyColumn: app.keyColumn || undefined,
+      valueColumn: app.valueColumn || undefined,
+      createdAt: app.createdAt,
+      updatedAt: app.updatedAt,
     };
   }
 
   async getAppsByProject(projectId: number): Promise<App[]> {
-    const result = await sql`
-      SELECT id, project_id, name, current_version, columns, key_column, value_column, created_at, updated_at
-      FROM apps WHERE project_id = ${projectId}
-      ORDER BY created_at DESC
-    `;
-    
-    return result.rows.map(row => ({
-      id: row.id,
-      projectId: row.project_id,
-      name: row.name,
-      currentVersion: row.current_version,
-      columns: row.columns,
-      keyColumn: row.key_column,
-      valueColumn: row.value_column,
-      createdAt: new Date(row.created_at),
-      updatedAt: new Date(row.updated_at),
+    const apps = await prisma.app.findMany({
+      where: { projectId },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return apps.map(app => ({
+      id: app.id,
+      projectId: app.projectId,
+      name: app.name,
+      currentVersion: app.currentVersion,
+      columns: app.columns,
+      keyColumn: app.keyColumn || undefined,
+      valueColumn: app.valueColumn || undefined,
+      createdAt: app.createdAt,
+      updatedAt: app.updatedAt,
     }));
   }
 
   async updateApp(appId: number, appData: Partial<App>): Promise<App | null> {
-    const result = await sql`
-      UPDATE apps 
-      SET name = COALESCE(${appData.name}, name),
-          current_version = COALESCE(${appData.currentVersion}, current_version),
-          columns = COALESCE(${JSON.stringify(appData.columns || [])}, columns),
-          key_column = COALESCE(${appData.keyColumn || null}, key_column),
-          value_column = COALESCE(${appData.valueColumn || null}, value_column),
-          updated_at = NOW()
-      WHERE id = ${appId}
-      RETURNING id, project_id, name, current_version, columns, key_column, value_column, created_at, updated_at
-    `;
-    
-    if (result.rows.length === 0) return null;
-    
-    return {
-      id: result.rows[0].id,
-      projectId: result.rows[0].project_id,
-      name: result.rows[0].name,
-      currentVersion: result.rows[0].current_version,
-      columns: result.rows[0].columns,
-      keyColumn: result.rows[0].key_column,
-      valueColumn: result.rows[0].value_column,
-      createdAt: new Date(result.rows[0].created_at),
-      updatedAt: new Date(result.rows[0].updated_at),
-    };
+    try {
+      const app = await prisma.app.update({
+        where: { id: appId },
+        data: {
+          ...(appData.name !== undefined && { name: appData.name }),
+          ...(appData.currentVersion !== undefined && { currentVersion: appData.currentVersion }),
+          ...(appData.columns !== undefined && { columns: appData.columns }),
+          ...(appData.keyColumn !== undefined && { keyColumn: appData.keyColumn }),
+          ...(appData.valueColumn !== undefined && { valueColumn: appData.valueColumn }),
+        }
+      });
+
+      return {
+        id: app.id,
+        projectId: app.projectId,
+        name: app.name,
+        currentVersion: app.currentVersion,
+        columns: app.columns,
+        keyColumn: app.keyColumn || undefined,
+        valueColumn: app.valueColumn || undefined,
+        createdAt: app.createdAt,
+        updatedAt: app.updatedAt,
+      };
+    } catch (error) {
+      return null;
+    }
   }
 
   // String methods
   async createString(stringData: Omit<StringItem, 'id' | 'createdAt'>): Promise<StringItem> {
-    const result = await sql`
-      INSERT INTO string_items (app_id, key, value, additional_columns, status, modified_at, modified_by, created_at)
-      VALUES (${stringData.appId}, ${stringData.key}, ${stringData.value}, ${JSON.stringify(stringData.additionalColumns || {})}, ${stringData.status || null}, ${stringData.modifiedAt || null}, ${stringData.modifiedBy || null}, NOW())
-      RETURNING id, app_id, key, value, additional_columns, status, modified_at, modified_by, created_at
-    `;
-    
+    const stringItem = await prisma.stringItem.create({
+      data: {
+        appId: stringData.appId,
+        key: stringData.key,
+        value: stringData.value,
+        additionalColumns: stringData.additionalColumns || null,
+        status: stringStatusToPrisma(stringData.status),
+        modifiedAt: stringData.modifiedAt || null,
+        modifiedBy: stringData.modifiedBy || null,
+      }
+    });
+
     return {
-      id: result.rows[0].id,
-      appId: result.rows[0].app_id,
-      key: result.rows[0].key,
-      value: result.rows[0].value,
-      additionalColumns: result.rows[0].additional_columns,
-      status: result.rows[0].status,
-      modifiedAt: result.rows[0].modified_at ? new Date(result.rows[0].modified_at) : undefined,
-      modifiedBy: result.rows[0].modified_by,
-      createdAt: new Date(result.rows[0].created_at),
+      id: stringItem.id,
+      appId: stringItem.appId,
+      key: stringItem.key,
+      value: stringItem.value,
+      additionalColumns: stringItem.additionalColumns as { [key: string]: string } | undefined,
+      status: stringStatusFromPrisma(stringItem.status),
+      modifiedAt: stringItem.modifiedAt || undefined,
+      modifiedBy: stringItem.modifiedBy || undefined,
+      createdAt: stringItem.createdAt,
     };
   }
 
   async getStringsByApp(appId: number, page: number = 1, limit: number = 50): Promise<{ data: StringItem[], total: number }> {
     const offset = (page - 1) * limit;
-    
-    const [stringsResult, countResult] = await Promise.all([
-      sql`
-        SELECT id, app_id, key, value, additional_columns, status, modified_at, modified_by, created_at
-        FROM string_items WHERE app_id = ${appId}
-        ORDER BY created_at DESC
-        LIMIT ${limit} OFFSET ${offset}
-      `,
-      sql`SELECT COUNT(*) as total FROM string_items WHERE app_id = ${appId}`
+
+    const [stringItems, total] = await Promise.all([
+      prisma.stringItem.findMany({
+        where: { appId },
+        orderBy: { createdAt: 'desc' },
+        take: limit,
+        skip: offset,
+      }),
+      prisma.stringItem.count({
+        where: { appId }
+      })
     ]);
-    
-    const data = stringsResult.rows.map(row => ({
-      id: row.id,
-      appId: row.app_id,
-      key: row.key,
-      value: row.value,
-      additionalColumns: row.additional_columns,
-      status: row.status,
-      modifiedAt: row.modified_at ? new Date(row.modified_at) : undefined,
-      modifiedBy: row.modified_by,
-      createdAt: new Date(row.created_at),
+
+    const data = stringItems.map(stringItem => ({
+      id: stringItem.id,
+      appId: stringItem.appId,
+      key: stringItem.key,
+      value: stringItem.value,
+      additionalColumns: stringItem.additionalColumns as { [key: string]: string } | undefined,
+      status: stringStatusFromPrisma(stringItem.status),
+      modifiedAt: stringItem.modifiedAt || undefined,
+      modifiedBy: stringItem.modifiedBy || undefined,
+      createdAt: stringItem.createdAt,
     }));
-    
-    return {
-      data,
-      total: parseInt(countResult.rows[0].total)
-    };
+
+    return { data, total };
   }
 
   async updateString(stringId: number, stringData: Partial<StringItem>): Promise<StringItem | null> {
-    const result = await sql`
-      UPDATE string_items 
-      SET key = COALESCE(${stringData.key}, key),
-          value = COALESCE(${stringData.value}, value),
-          additional_columns = COALESCE(${JSON.stringify(stringData.additionalColumns || {})}, additional_columns),
-          status = COALESCE(${stringData.status || null}, status),
-          modified_at = COALESCE(${stringData.modifiedAt || null}, modified_at),
-          modified_by = COALESCE(${stringData.modifiedBy || null}, modified_by)
-      WHERE id = ${stringId}
-      RETURNING id, app_id, key, value, additional_columns, status, modified_at, modified_by, created_at
-    `;
-    
-    if (result.rows.length === 0) return null;
-    
-    return {
-      id: result.rows[0].id,
-      appId: result.rows[0].app_id,
-      key: result.rows[0].key,
-      value: result.rows[0].value,
-      additionalColumns: result.rows[0].additional_columns,
-      status: result.rows[0].status,
-      modifiedAt: result.rows[0].modified_at ? new Date(result.rows[0].modified_at) : undefined,
-      modifiedBy: result.rows[0].modified_by,
-      createdAt: new Date(result.rows[0].created_at),
-    };
+    try {
+      const stringItem = await prisma.stringItem.update({
+        where: { id: stringId },
+        data: {
+          ...(stringData.key !== undefined && { key: stringData.key }),
+          ...(stringData.value !== undefined && { value: stringData.value }),
+          ...(stringData.additionalColumns !== undefined && { additionalColumns: stringData.additionalColumns }),
+          ...(stringData.status !== undefined && { status: stringStatusToPrisma(stringData.status) }),
+          ...(stringData.modifiedAt !== undefined && { modifiedAt: stringData.modifiedAt }),
+          ...(stringData.modifiedBy !== undefined && { modifiedBy: stringData.modifiedBy }),
+        }
+      });
+
+      return {
+        id: stringItem.id,
+        appId: stringItem.appId,
+        key: stringItem.key,
+        value: stringItem.value,
+        additionalColumns: stringItem.additionalColumns as { [key: string]: string } | undefined,
+        status: stringStatusFromPrisma(stringItem.status),
+        modifiedAt: stringItem.modifiedAt || undefined,
+        modifiedBy: stringItem.modifiedBy || undefined,
+        createdAt: stringItem.createdAt,
+      };
+    } catch (error) {
+      return null;
+    }
   }
 
   async deleteString(stringId: number): Promise<boolean> {
-    const result = await sql`DELETE FROM string_items WHERE id = ${stringId}`;
-    return result.rowCount > 0;
+    try {
+      await prisma.stringItem.delete({
+        where: { id: stringId }
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
   // Version methods
@@ -324,76 +356,85 @@ class PostgresDatabase {
 
     console.log('Created notifications:', notifications.length);
 
-    const result = await sql`
-      INSERT INTO versions (app_id, version_number, publisher_id, publisher_name, notes, strings_snapshot, notifications, published_at)
-      VALUES (${appId}, ${nextVersionNumber}, ${versionData.publisherId}, ${versionData.publisherName || null}, ${versionData.notes || null}, ${JSON.stringify(stringsData.data)}, ${JSON.stringify(notifications)}, NOW())
-      RETURNING id, app_id, version_number, publisher_id, publisher_name, notes, strings_snapshot, notifications, published_at
-    `;
+    const version = await prisma.version.create({
+      data: {
+        appId,
+        versionNumber: nextVersionNumber,
+        publisherId: versionData.publisherId,
+        publisherName: versionData.publisherName || null,
+        notes: versionData.notes || null,
+        stringsSnapshot: stringsData.data,
+        notifications,
+      }
+    });
 
-    const version = {
-      id: result.rows[0].id,
-      appId: result.rows[0].app_id,
-      versionNumber: result.rows[0].version_number,
-      publisherId: result.rows[0].publisher_id,
-      publisherName: result.rows[0].publisher_name,
-      notes: result.rows[0].notes,
-      stringsSnapshot: result.rows[0].strings_snapshot,
-      notifications: result.rows[0].notifications,
-      publishedAt: new Date(result.rows[0].published_at),
+    const versionResult = {
+      id: version.id,
+      appId: version.appId,
+      versionNumber: version.versionNumber,
+      publisherId: version.publisherId || undefined,
+      publisherName: version.publisherName || undefined,
+      notes: version.notes || undefined,
+      stringsSnapshot: version.stringsSnapshot as StringItem[],
+      notifications: version.notifications as { id: string; status: string; stringNumber: number; stringId: string; modifiedAt: Date }[],
+      publishedAt: version.publishedAt,
     };
 
     // Update app version to next version
     await this.updateApp(appId, { currentVersion: nextVersionNumber + 1 });
 
     // Clear pending changes for this app (reset status)
-    await sql`
-      UPDATE string_items
-      SET status = NULL, modified_at = NULL
-      WHERE app_id = ${appId} AND (status = 'new' OR status = 'modified')
-    `;
+    await prisma.stringItem.updateMany({
+      where: {
+        appId,
+        status: { in: [StringStatus.NEW, StringStatus.MODIFIED] }
+      },
+      data: {
+        status: null,
+        modifiedAt: null
+      }
+    });
 
     console.log(`Published version ${nextVersionNumber} for app ${appId} with ${notifications.length} changes`);
-    return version;
+    return versionResult;
   }
 
   async getVersionsByApp(appId: number): Promise<Version[]> {
-    const result = await sql`
-      SELECT id, app_id, version_number, publisher_id, publisher_name, notes, strings_snapshot, notifications, published_at
-      FROM versions WHERE app_id = ${appId}
-      ORDER BY version_number DESC
-    `;
-    
-    return result.rows.map(row => ({
-      id: row.id,
-      appId: row.app_id,
-      versionNumber: row.version_number,
-      publisherId: row.publisher_id,
-      publisherName: row.publisher_name,
-      notes: row.notes,
-      stringsSnapshot: row.strings_snapshot,
-      notifications: row.notifications,
-      publishedAt: new Date(row.published_at),
+    const versions = await prisma.version.findMany({
+      where: { appId },
+      orderBy: { versionNumber: 'desc' }
+    });
+
+    return versions.map(version => ({
+      id: version.id,
+      appId: version.appId,
+      versionNumber: version.versionNumber,
+      publisherId: version.publisherId || undefined,
+      publisherName: version.publisherName || undefined,
+      notes: version.notes || undefined,
+      stringsSnapshot: version.stringsSnapshot as StringItem[],
+      notifications: version.notifications as { id: string; status: string; stringNumber: number; stringId: string; modifiedAt: Date }[],
+      publishedAt: version.publishedAt,
     }));
   }
 
   async getVersion(versionId: number): Promise<Version | null> {
-    const result = await sql`
-      SELECT id, app_id, version_number, publisher_id, publisher_name, notes, strings_snapshot, notifications, published_at
-      FROM versions WHERE id = ${versionId}
-    `;
-    
-    if (result.rows.length === 0) return null;
-    
+    const version = await prisma.version.findUnique({
+      where: { id: versionId }
+    });
+
+    if (!version) return null;
+
     return {
-      id: result.rows[0].id,
-      appId: result.rows[0].app_id,
-      versionNumber: result.rows[0].version_number,
-      publisherId: result.rows[0].publisher_id,
-      publisherName: result.rows[0].publisher_name,
-      notes: result.rows[0].notes,
-      stringsSnapshot: result.rows[0].strings_snapshot,
-      notifications: result.rows[0].notifications,
-      publishedAt: new Date(result.rows[0].published_at),
+      id: version.id,
+      appId: version.appId,
+      versionNumber: version.versionNumber,
+      publisherId: version.publisherId || undefined,
+      publisherName: version.publisherName || undefined,
+      notes: version.notes || undefined,
+      stringsSnapshot: version.stringsSnapshot as StringItem[],
+      notifications: version.notifications as { id: string; status: string; stringNumber: number; stringId: string; modifiedAt: Date }[],
+      publishedAt: version.publishedAt,
     };
   }
 
