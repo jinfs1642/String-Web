@@ -209,7 +209,7 @@ class PostgresDatabase {
   // String methods
   async createString(stringData: Omit<StringItem, 'id' | 'createdAt'>): Promise<StringItem> {
     const result = await sql`
-      INSERT INTO strings (app_id, key, value, additional_columns, status, modified_at, modified_by, created_at)
+      INSERT INTO string_items (app_id, key, value, additional_columns, status, modified_at, modified_by, created_at)
       VALUES (${stringData.appId}, ${stringData.key}, ${stringData.value}, ${JSON.stringify(stringData.additionalColumns || {})}, ${stringData.status || null}, ${stringData.modifiedAt || null}, ${stringData.modifiedBy || null}, NOW())
       RETURNING id, app_id, key, value, additional_columns, status, modified_at, modified_by, created_at
     `;
@@ -233,11 +233,11 @@ class PostgresDatabase {
     const [stringsResult, countResult] = await Promise.all([
       sql`
         SELECT id, app_id, key, value, additional_columns, status, modified_at, modified_by, created_at
-        FROM strings WHERE app_id = ${appId}
+        FROM string_items WHERE app_id = ${appId}
         ORDER BY created_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `,
-      sql`SELECT COUNT(*) as total FROM strings WHERE app_id = ${appId}`
+      sql`SELECT COUNT(*) as total FROM string_items WHERE app_id = ${appId}`
     ]);
     
     const data = stringsResult.rows.map(row => ({
@@ -260,7 +260,7 @@ class PostgresDatabase {
 
   async updateString(stringId: number, stringData: Partial<StringItem>): Promise<StringItem | null> {
     const result = await sql`
-      UPDATE strings 
+      UPDATE string_items 
       SET key = COALESCE(${stringData.key}, key),
           value = COALESCE(${stringData.value}, value),
           additional_columns = COALESCE(${JSON.stringify(stringData.additionalColumns || {})}, additional_columns),
@@ -287,7 +287,7 @@ class PostgresDatabase {
   }
 
   async deleteString(stringId: number): Promise<boolean> {
-    const result = await sql`DELETE FROM strings WHERE id = ${stringId}`;
+    const result = await sql`DELETE FROM string_items WHERE id = ${stringId}`;
     return result.rowCount > 0;
   }
 
@@ -301,14 +301,35 @@ class PostgresDatabase {
     const app = await this.getApp(appId);
     if (!app) return null;
 
+    // Get all strings for this app
     const stringsData = await this.getStringsByApp(appId, 1, 10000);
-    
+
+    // Calculate the next version number
+    const nextVersionNumber = versionData.versionNumber || app.currentVersion;
+
+    // Create notifications from pending changes (strings with status 'new' or 'modified')
+    console.log('All app strings:', stringsData.data.length);
+    console.log('Strings with status:', stringsData.data.map(s => ({ id: s.id, key: s.key, status: s.status })));
+
+    const pendingStrings = stringsData.data.filter(str => str.status === 'new' || str.status === 'modified');
+    console.log('Pending strings found:', pendingStrings.length, pendingStrings.map(s => ({ id: s.id, key: s.key, status: s.status })));
+
+    const notifications = pendingStrings.map((str, index) => ({
+      id: `${str.id}-${Date.now()}-${index}`,
+      status: str.status === 'new' ? 'New' : 'Modified',
+      stringNumber: parseInt(str.key) || index + 1,
+      stringId: str.id.toString(),
+      modifiedAt: str.modifiedAt || new Date()
+    }));
+
+    console.log('Created notifications:', notifications.length);
+
     const result = await sql`
       INSERT INTO versions (app_id, version_number, publisher_id, publisher_name, notes, strings_snapshot, notifications, published_at)
-      VALUES (${appId}, ${versionData.versionNumber || (app.currentVersion + 1)}, ${versionData.publisherId}, ${versionData.publisherName || null}, ${versionData.notes || null}, ${JSON.stringify(stringsData.data)}, ${JSON.stringify([])}, NOW())
+      VALUES (${appId}, ${nextVersionNumber}, ${versionData.publisherId}, ${versionData.publisherName || null}, ${versionData.notes || null}, ${JSON.stringify(stringsData.data)}, ${JSON.stringify(notifications)}, NOW())
       RETURNING id, app_id, version_number, publisher_id, publisher_name, notes, strings_snapshot, notifications, published_at
     `;
-    
+
     const version = {
       id: result.rows[0].id,
       appId: result.rows[0].app_id,
@@ -321,16 +342,17 @@ class PostgresDatabase {
       publishedAt: new Date(result.rows[0].published_at),
     };
 
-    // Update app version
-    await this.updateApp(appId, { currentVersion: version.versionNumber + 1 });
+    // Update app version to next version
+    await this.updateApp(appId, { currentVersion: nextVersionNumber + 1 });
 
-    // Clear pending changes
+    // Clear pending changes for this app (reset status)
     await sql`
-      UPDATE strings 
+      UPDATE string_items
       SET status = NULL, modified_at = NULL
       WHERE app_id = ${appId} AND (status = 'new' OR status = 'modified')
     `;
 
+    console.log(`Published version ${nextVersionNumber} for app ${appId} with ${notifications.length} changes`);
     return version;
   }
 
