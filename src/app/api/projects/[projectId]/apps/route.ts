@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { postgresDb } from '@/lib/postgres-db';
 
+export const runtime = 'nodejs';
+
 // POST /api/projects/[projectId]/apps - 새 앱 생성
 export async function POST(
   request: NextRequest,

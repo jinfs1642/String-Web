@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { postgresDb } from '@/lib/postgres-db';
 
+export const runtime = 'nodejs';
+
 // GET /api/projects/[projectId]/apps/[appId] - 특정 앱 조회
 export async function GET(
   request: NextRequest,
@@ -94,18 +96,18 @@ export async function PUT(
     const body = await request.json();
 
     // 임시로 기본 사용자 사용
-    await memoryDb.initializeSampleData();
-    const user = memoryDb.getUserByEmail('admin@example.com');
+    await postgresDb.initializeSampleData();
+    const user = await postgresDb.getUserByEmail('admin@example.com');
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // 권한 확인 (멤버 이상)
-    if (!memoryDb.hasAppAccess(appId, user.id, 'member')) {
+    if (!(await postgresDb.hasAppAccess(appId, user.id, 'member'))) {
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    const updatedApp = memoryDb.updateApp(appId, body);
+    const updatedApp = await postgresDb.updateApp(appId, body);
     if (!updatedApp) {
       return NextResponse.json(
         { success: false, error: 'App not found' },

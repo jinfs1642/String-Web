@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { postgresDb } from '@/lib/postgres-db';
 
+export const runtime = 'nodejs';
+
 // GET /api/projects/[projectId] - 특정 프로젝트 조회
 export async function GET(
   request: NextRequest,

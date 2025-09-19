@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { postgresDb } from '@/lib/postgres-db';
 
+export const runtime = 'nodejs';
+
 // PUT /api/projects/[projectId]/apps/[appId]/strings/[stringId] - 스트링 업데이트
 export async function PUT(
   request: NextRequest,

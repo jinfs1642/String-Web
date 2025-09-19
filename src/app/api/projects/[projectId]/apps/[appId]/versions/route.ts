@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { postgresDb } from '@/lib/postgres-db';
 
+export const runtime = 'nodejs';
+
 // POST /api/projects/[projectId]/apps/[appId]/versions - 새 버전 발행
 export async function POST(
   request: NextRequest,
@@ -29,8 +31,7 @@ export async function POST(
     const { versionNumber, publisherName, notes } = body;
 
     // 임시로 기본 사용자 사용
-    await postgresDb.initializeSampleData();
-    const user = await postgresDb.getUserByEmail('admin@example.com');
+    const user = await postgresDb.ensureUserExists('admin@example.com');
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -102,8 +103,7 @@ export async function GET(
     }
 
     // 임시로 기본 사용자 사용
-    await postgresDb.initializeSampleData();
-    const user = await postgresDb.getUserByEmail('admin@example.com');
+    const user = await postgresDb.ensureUserExists('admin@example.com');
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }

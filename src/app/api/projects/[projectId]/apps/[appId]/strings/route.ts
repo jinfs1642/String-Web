@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { postgresDb } from '@/lib/postgres-db';
 
+export const runtime = 'nodejs';
+
 // GET /api/projects/[projectId]/apps/[appId]/strings - 스트링 목록 조회
 export async function GET(
   request: NextRequest,

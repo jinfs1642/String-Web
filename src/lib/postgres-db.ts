@@ -450,8 +450,11 @@ class PostgresDatabase {
     return this.hasProjectAccess(app.projectId, userId, minRole);
   }
 
-  // Initialize sample data
+  // Initialize sample data (only in development)
   async initializeSampleData(): Promise<void> {
+    // Only run in development environment
+    if (process.env.NODE_ENV === 'production') return;
+
     const existingUser = await this.getUserByEmail('admin@example.com');
     if (existingUser) return;
 
@@ -487,6 +490,29 @@ class PostgresDatabase {
       },
       modifiedBy: user.id,
     });
+  }
+
+  // Helper method to ensure database connection and get user (for production use)
+  async ensureUserExists(email: string = 'admin@example.com'): Promise<User | null> {
+    let user = await this.getUserByEmail(email);
+
+    // If no user exists and we're in development, initialize sample data
+    if (!user && process.env.NODE_ENV !== 'production') {
+      await this.initializeSampleData();
+      user = await this.getUserByEmail(email);
+    }
+
+    // In production, you should handle user authentication properly
+    // For now, create a default admin user if none exists
+    if (!user && process.env.NODE_ENV === 'production') {
+      user = await this.createUser({
+        email: email,
+        name: 'Admin User',
+        avatarUrl: undefined,
+      });
+    }
+
+    return user;
   }
 }
 
