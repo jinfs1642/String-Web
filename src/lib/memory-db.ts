@@ -286,22 +286,36 @@ class MemoryDatabase {
     // Get all strings for this app
     const appStrings = this.getStringsByApp(appId, 1, 10000).data;
 
+    // Calculate the next version number
+    const nextVersionNumber = versionData.versionNumber || app.currentVersion;
+
+    // Create notifications from pending changes (strings with status 'new' or 'modified')
+    const notifications = appStrings
+      .filter(str => str.status === 'new' || str.status === 'modified')
+      .map((str, index) => ({
+        id: `${str.id}-${Date.now()}-${index}`,
+        status: str.status === 'new' ? 'New' : 'Modified',
+        stringNumber: parseInt(str.key) || index + 1,
+        stringId: str.id.toString(),
+        modifiedAt: str.modifiedAt || new Date()
+      }));
+
     const version: Version = {
       id: this.nextVersionId++,
       appId,
-      versionNumber: versionData.versionNumber || app.currentVersion,
+      versionNumber: nextVersionNumber,
       publisherId: versionData.publisherId,
       publisherName: versionData.publisherName,
       notes: versionData.notes,
       stringsSnapshot: appStrings,
-      notifications: [], // Will be populated with pending changes
+      notifications: notifications,
       publishedAt: new Date(),
     };
 
     this.versions.set(version.id, version);
 
-    // Update app version (this will save data)
-    this.updateApp(appId, { currentVersion: version.versionNumber + 1 });
+    // Update app version to next version
+    this.updateApp(appId, { currentVersion: nextVersionNumber + 1 });
 
     // Clear pending changes for this app (reset status)
     for (const [stringId, string] of this.strings.entries()) {
@@ -310,6 +324,7 @@ class MemoryDatabase {
       }
     }
 
+    console.log(`Published version ${nextVersionNumber} for app ${appId} with ${notifications.length} changes`);
     return version;
   }
 
