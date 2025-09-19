@@ -1,0 +1,125 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String?
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  projectMembers ProjectMember[]
+  strings        StringItem[]    @relation("ModifiedBy")
+  versions       Version[]       @relation("Publisher")
+
+  @@map("users")
+}
+
+model Project {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  createdBy   Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  apps    App[]
+  members ProjectMember[]
+
+  @@map("projects")
+}
+
+model ProjectMember {
+  id        Int                                     @id @default(autoincrement())
+  projectId Int
+  userId    Int
+  role      ProjectMemberRole @default(VIEWER)
+  createdAt DateTime          @default(now())
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@map("project_members")
+}
+
+enum ProjectMemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+model App {
+  id             Int      @id @default(autoincrement())
+  projectId      Int
+  name           String
+  currentVersion Int      @default(1)
+  columns        String[] @default([])
+  keyColumn      String?
+  valueColumn    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  project Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  strings StringItem[]
+  versions Version[]
+
+  @@map("apps")
+}
+
+model StringItem {
+  id                Int       @id @default(autoincrement())
+  appId             Int
+  key               String
+  value             String
+  additionalColumns Json?
+  status            StringStatus?
+  modifiedAt        DateTime?
+  modifiedBy        Int?
+  createdAt         DateTime  @default(now())
+
+  // Relations
+  app      App   @relation(fields: [appId], references: [id], onDelete: Cascade)
+  modifier User? @relation("ModifiedBy", fields: [modifiedBy], references: [id])
+
+  @@map("string_items")
+}
+
+enum StringStatus {
+  NEW
+  MODIFIED
+}
+
+model Version {
+  id              Int      @id @default(autoincrement())
+  appId           Int
+  versionNumber   Int
+  publisherId     Int?
+  publisherName   String?
+  notes           String?
+  stringsSnapshot Json
+  notifications   Json
+  publishedAt     DateTime @default(now())
+
+  // Relations
+  app       App   @relation(fields: [appId], references: [id], onDelete: Cascade)
+  publisher User? @relation("Publisher", fields: [publisherId], references: [id])
+
+  @@map("versions")
+}
