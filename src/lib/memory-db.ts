@@ -290,15 +290,21 @@ class MemoryDatabase {
     const nextVersionNumber = versionData.versionNumber || app.currentVersion;
 
     // Create notifications from pending changes (strings with status 'new' or 'modified')
-    const notifications = appStrings
-      .filter(str => str.status === 'new' || str.status === 'modified')
-      .map((str, index) => ({
+    console.log('All app strings:', appStrings.length);
+    console.log('Strings with status:', appStrings.map(s => ({ id: s.id, key: s.key, status: s.status })));
+
+    const pendingStrings = appStrings.filter(str => str.status === 'new' || str.status === 'modified');
+    console.log('Pending strings found:', pendingStrings.length, pendingStrings.map(s => ({ id: s.id, key: s.key, status: s.status })));
+
+    const notifications = pendingStrings.map((str, index) => ({
         id: `${str.id}-${Date.now()}-${index}`,
         status: str.status === 'new' ? 'New' : 'Modified',
         stringNumber: parseInt(str.key) || index + 1,
         stringId: str.id.toString(),
         modifiedAt: str.modifiedAt || new Date()
       }));
+
+    console.log('Created notifications:', notifications.length);
 
     const version: Version = {
       id: this.nextVersionId++,
@@ -320,9 +326,11 @@ class MemoryDatabase {
     // Clear pending changes for this app (reset status)
     for (const [stringId, string] of this.strings.entries()) {
       if (string.appId === appId && (string.status === 'new' || string.status === 'modified')) {
-        this.updateString(stringId, { status: undefined, modifiedAt: undefined });
+        const { status, modifiedAt, ...cleanedString } = string;
+        this.strings.set(stringId, cleanedString);
       }
     }
+    this.saveData(); // Save after clearing status
 
     console.log(`Published version ${nextVersionNumber} for app ${appId} with ${notifications.length} changes`);
     return version;
