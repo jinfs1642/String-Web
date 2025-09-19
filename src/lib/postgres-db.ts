@@ -31,7 +31,7 @@ class PostgresDatabase {
     return {
       id: user.id,
       email: user.email,
-      name: user.name,
+      name: user.name || '',
       avatarUrl: user.avatarUrl || undefined,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
@@ -48,7 +48,7 @@ class PostgresDatabase {
     return {
       id: user.id,
       email: user.email,
-      name: user.name,
+      name: user.name || '',
       avatarUrl: user.avatarUrl || undefined,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
@@ -232,7 +232,7 @@ class PostgresDatabase {
         appId: stringData.appId,
         key: stringData.key,
         value: stringData.value,
-        additionalColumns: stringData.additionalColumns || null,
+        additionalColumns: stringData.additionalColumns || undefined,
         status: stringStatusToPrisma(stringData.status),
         modifiedAt: stringData.modifiedAt || null,
         modifiedBy: stringData.modifiedBy || null,
@@ -363,8 +363,8 @@ class PostgresDatabase {
         publisherId: versionData.publisherId,
         publisherName: versionData.publisherName || null,
         notes: versionData.notes || null,
-        stringsSnapshot: stringsData.data,
-        notifications,
+        stringsSnapshot: JSON.parse(JSON.stringify(stringsData.data)),
+        notifications: JSON.parse(JSON.stringify(notifications)),
       }
     });
 
@@ -375,8 +375,8 @@ class PostgresDatabase {
       publisherId: version.publisherId || undefined,
       publisherName: version.publisherName || undefined,
       notes: version.notes || undefined,
-      stringsSnapshot: version.stringsSnapshot as StringItem[],
-      notifications: version.notifications as { id: string; status: string; stringNumber: number; stringId: string; modifiedAt: Date }[],
+      stringsSnapshot: version.stringsSnapshot as unknown as StringItem[],
+      notifications: version.notifications as unknown as { id: string; status: string; stringNumber: number; stringId: string; modifiedAt: Date }[],
       publishedAt: version.publishedAt,
     };
 
@@ -412,8 +412,8 @@ class PostgresDatabase {
       publisherId: version.publisherId || undefined,
       publisherName: version.publisherName || undefined,
       notes: version.notes || undefined,
-      stringsSnapshot: version.stringsSnapshot as StringItem[],
-      notifications: version.notifications as { id: string; status: string; stringNumber: number; stringId: string; modifiedAt: Date }[],
+      stringsSnapshot: version.stringsSnapshot as unknown as StringItem[],
+      notifications: version.notifications as unknown as { id: string; status: string; stringNumber: number; stringId: string; modifiedAt: Date }[],
       publishedAt: version.publishedAt,
     }));
   }
@@ -432,8 +432,8 @@ class PostgresDatabase {
       publisherId: version.publisherId || undefined,
       publisherName: version.publisherName || undefined,
       notes: version.notes || undefined,
-      stringsSnapshot: version.stringsSnapshot as StringItem[],
-      notifications: version.notifications as { id: string; status: string; stringNumber: number; stringId: string; modifiedAt: Date }[],
+      stringsSnapshot: version.stringsSnapshot as unknown as StringItem[],
+      notifications: version.notifications as unknown as { id: string; status: string; stringNumber: number; stringId: string; modifiedAt: Date }[],
       publishedAt: version.publishedAt,
     };
   }
