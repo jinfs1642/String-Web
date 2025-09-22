@@ -143,7 +143,7 @@ export default function Home() {
                   onChange={(e) => setEditingProjectName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && updateProjectName(project.id)}
                   onBlur={() => setEditingProjectId(null)}
-                  className="w-full border border-blue-300 rounded px-2 py-1"
+                  className="w-full border border-blue-300 rounded px-2 py-1 text-[#767676]"
                   autoFocus
                 />
               ) : (
