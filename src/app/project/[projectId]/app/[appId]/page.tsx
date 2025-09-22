@@ -28,11 +28,36 @@ export default function AppPage() {
     notes: ''
   });
 
+  // Function to get next version number
+  const getNextVersion = (currentVersion: number): string => {
+    // Convert integer version to decimal (1 -> 0.1, 2 -> 0.2, etc.)
+    return (currentVersion * 0.1).toFixed(1);
+  };
+
+  // Function to get next pending version
+  const getNextPendingVersion = async (): Promise<string> => {
+    try {
+      const versionsResponse = await apiClient.getVersions(projectId, appId);
+      if (versionsResponse.success && versionsResponse.data && versionsResponse.data.length > 0) {
+        // Get the highest version number from published versions
+        const latestVersion = Math.max(...versionsResponse.data.map(v => v.versionNumber));
+        return ((latestVersion + 1) * 0.1).toFixed(1);
+      } else {
+        // No versions published yet, start with 0.1
+        return '0.1';
+      }
+    } catch (error) {
+      return '0.1';
+    }
+  };
+
   // Pagination and filtering states
   const [pendingChangesPage, setPendingChangesPage] = useState(1);
   const [stringsPage, setStringsPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [columnFilter, setColumnFilter] = useState('');
+  const [searchMode, setSearchMode] = useState<'exact' | 'contains'>('contains'); // 검색 모드: exact(값 일치) 또는 contains(값 포함)
+  const [nextPendingVersion, setNextPendingVersion] = useState<string>('0.1');
   const ITEMS_PER_PAGE = 10;
 
   // Debounced update for Korean input
@@ -110,7 +135,11 @@ export default function AppPage() {
         const response = await apiClient.getApp(projectId.toString(), appId.toString());
         if (response.success && response.data) {
           setApp(response.data);
-          setPublishData(prev => ({ ...prev, version: response.data!.currentVersion.toString() }));
+
+          // Get next pending version
+          const nextVersion = await getNextPendingVersion();
+          setNextPendingVersion(nextVersion);
+          setPublishData(prev => ({ ...prev, version: nextVersion }));
 
           // Load project info separately
           const projectResponse = await apiClient.getProject(projectId.toString());
@@ -234,7 +263,8 @@ export default function AppPage() {
   const handlePublishConfirm = async () => {
     if (!app) return;
 
-    const versionNumber = parseInt(publishData.version) || app.currentVersion;
+    // Convert decimal version back to integer for backend compatibility
+    const versionNumber = Math.round(parseFloat(publishData.version) * 10) || app.currentVersion;
 
     try {
       const response = await apiClient.publishVersion(projectId, appId, {
@@ -248,15 +278,19 @@ export default function AppPage() {
         const appResponse = await apiClient.getApp(projectId.toString(), appId.toString());
         if (appResponse.success && appResponse.data) {
           setApp(appResponse.data);
+
+          // Calculate next pending version
+          const nextVersion = await getNextPendingVersion();
+          setNextPendingVersion(nextVersion);
           setPublishData({
-            version: appResponse.data.currentVersion.toString(),
+            version: nextVersion,
             publisher: '',
             notes: ''
           });
         }
 
         setShowPublishModal(false);
-        alert(`버전 ${versionNumber}이 성공적으로 출시되었습니다!`);
+        alert(`버전 ${publishData.version}이 성공적으로 출시되었습니다!`);
       } else {
         setError(response.error || 'Failed to publish version');
       }
@@ -365,14 +399,29 @@ export default function AppPage() {
 
   // Filter and paginate functions
   const filteredStrings = (app.strings || []).filter(str => {
-    const matchesSearch = searchTerm === '' ||
-      str.key.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      str.value.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (str.additionalColumns && Object.values(str.additionalColumns).some(
-        val => val && val.toString().toLowerCase().includes(searchTerm.toLowerCase())
-      ));
+    if (searchTerm === '') return true;
 
-    return matchesSearch;
+    const searchLower = searchTerm.toLowerCase();
+
+    // Create an array of all searchable values
+    const searchableValues = [
+      str.key,
+      str.value,
+      ...(str.additionalColumns ? Object.values(str.additionalColumns) : [])
+    ];
+
+    // Apply search logic based on mode
+    if (searchMode === 'exact') {
+      // 값 일치: exact match
+      return searchableValues.some(val =>
+        val && val.toString().toLowerCase() === searchLower
+      );
+    } else {
+      // 값 포함: contains match (default)
+      return searchableValues.some(val =>
+        val && val.toString().toLowerCase().includes(searchLower)
+      );
+    }
   });
 
   const paginatedStrings = filteredStrings.slice(
@@ -457,7 +506,7 @@ export default function AppPage() {
         {(
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-8">
             <h2 className="text-xl font-semibold text-yellow-800 mb-4">
-              Pending Changes (Version {app.currentVersion})
+              Pending Changes (Version {nextPendingVersion})
             </h2>
             {pendingChanges.length > 0 ? (
               <div className="overflow-x-auto">
@@ -532,6 +581,14 @@ export default function AppPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="border border-gray-300 rounded px-3 py-1 text-sm text-[#767676] placeholder-[#767676]"
               />
+              <select
+                value={searchMode}
+                onChange={(e) => setSearchMode(e.target.value as 'exact' | 'contains')}
+                className="border border-gray-300 rounded px-3 py-1 text-sm text-[#767676]"
+              >
+                <option value="contains">값 포함</option>
+                <option value="exact">값 일치</option>
+              </select>
               {app.columns && app.columns.length > 0 && (
                 <select
                   value={columnFilter}
