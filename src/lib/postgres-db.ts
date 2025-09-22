@@ -400,6 +400,15 @@ class PostgresDatabase {
   }
 
   async getVersionsByApp(appId: number, limit: number = 50, includeSnapshot: boolean = false): Promise<Version[]> {
+    // Auto-include snapshots for apps with less than 1000 strings
+    let shouldIncludeSnapshot = includeSnapshot;
+    if (!includeSnapshot) {
+      const stringsCount = await prisma.stringItem.count({
+        where: { appId }
+      });
+      shouldIncludeSnapshot = stringsCount < 1000;
+    }
+
     const versions = await prisma.version.findMany({
       where: { appId },
       orderBy: { versionNumber: 'desc' },
@@ -411,7 +420,7 @@ class PostgresDatabase {
         publisherId: true,
         publisherName: true,
         notes: true,
-        stringsSnapshot: includeSnapshot,
+        stringsSnapshot: shouldIncludeSnapshot,
         notifications: true,
         publishedAt: true,
       }
@@ -424,7 +433,7 @@ class PostgresDatabase {
       publisherId: version.publisherId || undefined,
       publisherName: version.publisherName || undefined,
       notes: version.notes || undefined,
-      stringsSnapshot: includeSnapshot ? (version.stringsSnapshot as unknown as StringItem[]) : [],
+      stringsSnapshot: shouldIncludeSnapshot ? (version.stringsSnapshot as unknown as StringItem[]) : [],
       notifications: version.notifications as unknown as { id: string; status: string; stringNumber: number; stringId: string; modifiedAt: Date }[],
       publishedAt: version.publishedAt,
     }));

@@ -94,7 +94,7 @@ export default function ProjectPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
-        <div className="text-gray-600">Loading project...</div>
+        <div className="text-gray-800">Loading project...</div>
       </div>
     );
   }
@@ -195,7 +195,7 @@ export default function ProjectPage() {
                             setEditingAppId(app.id);
                             setEditingAppName(app.name);
                         }}
-                        className="p-1 text-gray-400 hover:text-gray-600"
+                        className="p-1 text-gray-700 hover:text-gray-900"
                     >
                         <EditIcon />
                     </button>

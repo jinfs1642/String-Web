@@ -381,7 +381,7 @@ export default function AppPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
-        <div className="text-gray-600">Loading app...</div>
+        <div className="text-gray-800">Loading app...</div>
       </div>
     );
   }

@@ -73,7 +73,7 @@ export default function HistoryPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
-        <div className="text-gray-600">Loading history...</div>
+        <div className="text-gray-800">Loading history...</div>
       </div>
     );
   }
@@ -246,7 +246,7 @@ export default function HistoryPage() {
                   ) : (
                     <div className="text-center py-8 text-gray-800">
                       <p className="mb-2">String snapshot data is not available for this version.</p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-gray-800">
                         This version was published with a large number of strings.
                         Only change notifications are available to avoid performance issues.
                       </p>
