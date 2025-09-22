@@ -31,8 +31,7 @@ export async function PUT(
     const body = await request.json();
 
     // 임시로 기본 사용자 사용
-    await postgresDb.initializeSampleData();
-    const user = await postgresDb.getUserByEmail('admin@example.com');
+    const user = await postgresDb.ensureUserExists('admin@example.com');
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -104,8 +103,7 @@ export async function DELETE(
     }
 
     // 임시로 기본 사용자 사용
-    await postgresDb.initializeSampleData();
-    const user = await postgresDb.getUserByEmail('admin@example.com');
+    const user = await postgresDb.ensureUserExists('admin@example.com');
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }

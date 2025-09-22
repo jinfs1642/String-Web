@@ -14,8 +14,7 @@ export async function GET(request: NextRequest) {
     // }
 
     // 임시로 기본 사용자 사용 (나중에 실제 인증으로 변경)
-    await postgresDb.initializeSampleData();
-    const user = await postgresDb.getUserByEmail('admin@example.com');
+    const user = await postgresDb.ensureUserExists('admin@example.com');
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -61,8 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 임시로 기본 사용자 사용
-    await postgresDb.initializeSampleData();
-    const user = await postgresDb.getUserByEmail('admin@example.com');
+    const user = await postgresDb.ensureUserExists('admin@example.com');
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }

@@ -54,6 +54,8 @@ export default function AppPage() {
   // Pagination and filtering states
   const [pendingChangesPage, setPendingChangesPage] = useState(1);
   const [stringsPage, setStringsPage] = useState(1);
+  const [pageInput, setPageInput] = useState('');
+  const [showPageInput, setShowPageInput] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [columnFilter, setColumnFilter] = useState('');
   const [searchMode, setSearchMode] = useState<'exact' | 'contains'>('contains'); // 검색 모드: exact(값 일치) 또는 contains(값 포함)
@@ -514,8 +516,7 @@ export default function AppPage() {
                   <thead>
                     <tr className="border-b border-yellow-200">
                       <th className="text-left py-2 px-4 text-black">Status</th>
-                      <th className="text-left py-2 px-4 text-black">String #</th>
-                      <th className="text-left py-2 px-4 text-black">String ID</th>
+                      <th className="text-left py-2 px-4 text-black">String ID (Key)</th>
                       <th className="text-left py-2 px-4 text-black">Modified Time</th>
                     </tr>
                   </thead>
@@ -531,7 +532,6 @@ export default function AppPage() {
                             {change.status}
                           </span>
                         </td>
-                        <td className="py-2 px-4 text-gray-900">{change.stringNumber}</td>
                         <td className="py-2 px-4 text-gray-900">{change.stringId}</td>
                         <td className="py-2 px-4 text-gray-900">
                           {new Date(change.modifiedAt).toLocaleString()}
@@ -551,7 +551,8 @@ export default function AppPage() {
                 <button
                   onClick={() => setPendingChangesPage(Math.max(1, pendingChangesPage - 1))}
                   disabled={pendingChangesPage === 1}
-                  className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 text-[#767676]"
+                  className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                  style={{ color: '#767676' }}
                 >
                   이전
                 </button>
@@ -561,7 +562,8 @@ export default function AppPage() {
                 <button
                   onClick={() => setPendingChangesPage(Math.min(totalPendingPages, pendingChangesPage + 1))}
                   disabled={pendingChangesPage === totalPendingPages}
-                  className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50 text-[#767676]"
+                  className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                  style={{ color: '#767676' }}
                 >
                   다음
                 </button>
@@ -774,16 +776,61 @@ export default function AppPage() {
                 onClick={() => setStringsPage(Math.max(1, stringsPage - 1))}
                 disabled={stringsPage === 1}
                 className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                style={{ color: '#767676' }}
               >
                 이전
               </button>
-              <span className="px-3 py-1 text-gray-900">
-                {stringsPage} / {totalStringPages}
-              </span>
+              {showPageInput ? (
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    value={pageInput}
+                    onChange={(e) => setPageInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const newPage = parseInt(pageInput);
+                        if (newPage >= 1 && newPage <= totalStringPages) {
+                          setStringsPage(newPage);
+                        }
+                        setShowPageInput(false);
+                        setPageInput('');
+                      } else if (e.key === 'Escape') {
+                        setShowPageInput(false);
+                        setPageInput('');
+                      }
+                    }}
+                    onBlur={() => {
+                      const newPage = parseInt(pageInput);
+                      if (newPage >= 1 && newPage <= totalStringPages) {
+                        setStringsPage(newPage);
+                      }
+                      setShowPageInput(false);
+                      setPageInput('');
+                    }}
+                    autoFocus
+                    className="px-2 py-1 border border-gray-300 rounded w-16 text-center text-[#767676]"
+                    min="1"
+                    max={totalStringPages}
+                  />
+                  <span className="px-1 text-gray-900">/ {totalStringPages}</span>
+                </div>
+              ) : (
+                <span
+                  className="px-3 py-1 text-gray-900 cursor-pointer hover:bg-gray-100 rounded"
+                  onClick={() => {
+                    setShowPageInput(true);
+                    setPageInput(stringsPage.toString());
+                  }}
+                  title="클릭하여 페이지 번호 입력"
+                >
+                  {stringsPage} / {totalStringPages}
+                </span>
+              )}
               <button
                 onClick={() => setStringsPage(Math.min(totalStringPages, stringsPage + 1))}
                 disabled={stringsPage === totalStringPages}
                 className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                style={{ color: '#767676' }}
               >
                 다음
               </button>
