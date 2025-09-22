@@ -113,7 +113,7 @@ export async function GET(
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    const versions = await postgresDb.getVersionsByApp(appId);
+    const versions = await postgresDb.getVersionsByApp(appId, 100, false); // Get last 100 versions without snapshots
 
     return NextResponse.json({
       success: true,

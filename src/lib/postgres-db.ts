@@ -399,10 +399,22 @@ class PostgresDatabase {
     return versionResult;
   }
 
-  async getVersionsByApp(appId: number): Promise<Version[]> {
+  async getVersionsByApp(appId: number, limit: number = 50, includeSnapshot: boolean = false): Promise<Version[]> {
     const versions = await prisma.version.findMany({
       where: { appId },
-      orderBy: { versionNumber: 'desc' }
+      orderBy: { versionNumber: 'desc' },
+      take: limit,
+      select: {
+        id: true,
+        appId: true,
+        versionNumber: true,
+        publisherId: true,
+        publisherName: true,
+        notes: true,
+        stringsSnapshot: includeSnapshot,
+        notifications: true,
+        publishedAt: true,
+      }
     });
 
     return versions.map(version => ({
@@ -412,7 +424,7 @@ class PostgresDatabase {
       publisherId: version.publisherId || undefined,
       publisherName: version.publisherName || undefined,
       notes: version.notes || undefined,
-      stringsSnapshot: version.stringsSnapshot as unknown as StringItem[],
+      stringsSnapshot: includeSnapshot ? (version.stringsSnapshot as unknown as StringItem[]) : [],
       notifications: version.notifications as unknown as { id: string; status: string; stringNumber: number; stringId: string; modifiedAt: Date }[],
       publishedAt: version.publishedAt,
     }));

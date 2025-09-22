@@ -130,6 +130,10 @@ class ApiClient {
   async getVersion(projectId: number, appId: number, versionId: number): Promise<ApiResponse<Version>> {
     return this.request<Version>(`/projects/${projectId}/apps/${appId}/versions/${versionId}`);
   }
+
+  async getVersionWithSnapshot(projectId: number, appId: number, versionId: number): Promise<ApiResponse<Version>> {
+    return this.request<Version>(`/projects/${projectId}/apps/${appId}/versions/${versionId}`);
+  }
 }
 
 // Singleton instance

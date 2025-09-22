@@ -151,7 +151,7 @@ export default function HistoryPage() {
                     </p>
                   )}
                   <p className="text-sm text-gray-800">
-                    {version.stringsSnapshot.length} strings
+                    {version.stringsSnapshot?.length || 0} strings
                   </p>
                   <p className="text-sm text-gray-800">
                     {version.notifications.length} changes
@@ -222,26 +222,36 @@ export default function HistoryPage() {
 
                 <div className="bg-white rounded-lg shadow-md p-6">
                   <h3 className="font-semibold mb-4">All Strings in Version {selectedVersionData.versionNumber}</h3>
-                  <div className="overflow-x-auto">
-                    <table className="w-full border border-gray-200">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="border border-gray-200 px-4 py-2 text-left">#</th>
-                          <th className="border border-gray-200 px-4 py-2 text-left">String Key</th>
-                          <th className="border border-gray-200 px-4 py-2 text-left">String Value</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedVersionData.stringsSnapshot.map((string, index) => (
-                          <tr key={string.id || index}>
-                            <td className="border border-gray-200 px-4 py-2">{index + 1}</td>
-                            <td className="border border-gray-200 px-4 py-2 text-gray-900">{string.key}</td>
-                            <td className="border border-gray-200 px-4 py-2 text-gray-900">{string.value}</td>
+                  {selectedVersionData.stringsSnapshot && selectedVersionData.stringsSnapshot.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full border border-gray-200">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="border border-gray-200 px-4 py-2 text-left">#</th>
+                            <th className="border border-gray-200 px-4 py-2 text-left">String Key</th>
+                            <th className="border border-gray-200 px-4 py-2 text-left">String Value</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody>
+                          {selectedVersionData.stringsSnapshot.map((string, index) => (
+                            <tr key={string.id || index}>
+                              <td className="border border-gray-200 px-4 py-2">{index + 1}</td>
+                              <td className="border border-gray-200 px-4 py-2 text-gray-900">{string.key}</td>
+                              <td className="border border-gray-200 px-4 py-2 text-gray-900">{string.value}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-800">
+                      <p className="mb-2">String snapshot data is not available for this version.</p>
+                      <p className="text-sm text-gray-600">
+                        This version was published with a large number of strings.
+                        Only change notifications are available to avoid performance issues.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (

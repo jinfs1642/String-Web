@@ -48,7 +48,7 @@ export async function GET(
 
     // 앱에 스트링 정보 포함
     const stringsData = await postgresDb.getStringsByApp(appId, 1, 10000);
-    const versions = await postgresDb.getVersionsByApp(appId);
+    const versions = await postgresDb.getVersionsByApp(appId, 10, false); // Only get last 10 versions without snapshots
 
     const appWithData = {
       ...app,
