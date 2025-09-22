@@ -180,7 +180,7 @@ export default function ProjectPage() {
                   onChange={(e) => setEditingAppName(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && updateAppName(app.id)}
                   onBlur={() => setEditingAppId(null)}
-                  className="w-full border border-blue-300 rounded px-2 py-1 mb-2"
+                  className="w-full border border-blue-300 rounded px-2 py-1 mb-2 text-[#767676]"
                   autoFocus
                 />
               ) : (

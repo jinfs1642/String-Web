@@ -636,7 +636,7 @@ export default function AppPage() {
                                 return newState;
                               });
                             }}
-                            className="w-full border-none outline-none bg-transparent text-black"
+                            className="w-full border-none outline-none bg-transparent text-[#767676]"
                           />
                         </td>
                       ))
@@ -660,7 +660,7 @@ export default function AppPage() {
                                 return newState;
                               });
                             }}
-                            className="w-full border-none outline-none bg-transparent text-black"
+                            className="w-full border-none outline-none bg-transparent text-[#767676]"
                           />
                         </td>
                         <td className="border border-gray-200 px-4 py-2">
@@ -681,7 +681,7 @@ export default function AppPage() {
                                 return newState;
                               });
                             }}
-                            className="w-full border-none outline-none bg-transparent text-black"
+                            className="w-full border-none outline-none bg-transparent text-[#767676]"
                           />
                         </td>
                       </>
@@ -979,7 +979,7 @@ export default function AppPage() {
                     type="number"
                     value={publishData.version}
                     onChange={(e) => setPublishData(prev => ({ ...prev, version: e.target.value }))}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-gray-900"
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-[#767676]"
                     min="1"
                   />
                 </div>
@@ -993,7 +993,7 @@ export default function AppPage() {
                     value={publishData.publisher}
                     onChange={(e) => setPublishData(prev => ({ ...prev, publisher: e.target.value }))}
                     placeholder="발행인 이름 입력"
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-gray-900 placeholder-[#767676]"
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-[#767676] placeholder-[#767676]"
                   />
                 </div>
 
@@ -1006,7 +1006,7 @@ export default function AppPage() {
                     onChange={(e) => setPublishData(prev => ({ ...prev, notes: e.target.value }))}
                     placeholder="특이사항이나 변경 내용을 입력하세요"
                     rows={3}
-                    className="w-full border border-gray-300 rounded px-3 py-2 text-gray-900 placeholder-[#767676]"
+                    className="w-full border border-gray-300 rounded px-3 py-2 text-[#767676] placeholder-[#767676]"
                   />
                 </div>
               </div>
